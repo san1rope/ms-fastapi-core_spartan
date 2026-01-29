@@ -1,0 +1,27 @@
+_client.py:1740 #INFO     [2026-01-29 13:05:54,756] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:06:25,019] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:06:42,999] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:09:53,194] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:09:56,603] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+base_events.py:1758 #ERROR    [2026-01-29 13:09:56,967] - asyncio - 0| Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Valentyn\AppData\Local\Programs\Python\Python310\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Valentyn\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+_client.py:1740 #INFO     [2026-01-29 13:09:57,095] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=163840 "HTTP/1.1 200 OK"
+base_events.py:1758 #ERROR    [2026-01-29 13:09:58,449] - asyncio - 0| Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Valentyn\AppData\Local\Programs\Python\Python310\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Valentyn\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+_client.py:1740 #INFO     [2026-01-29 13:14:25,017] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:26:06,138] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:26:06,191] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:26:08,713] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 13:26:09,181] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=294912 "HTTP/1.1 200 OK"

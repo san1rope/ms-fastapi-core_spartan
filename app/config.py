@@ -5,6 +5,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from httpx import AsyncClient
 
 load_dotenv()
 
@@ -18,5 +19,8 @@ class Config:
     LOGGER: Optional[Logger] = None
 
     REST_APP: Optional[FastAPI] = None
+    HTTP_CLIENT = AsyncClient(timeout=None)
+
     REST_API_TOKEN: str = os.getenv("REST_API_TOKEN").strip()
     KAFKA_BOOTSTRAP_IP: str = os.getenv("KAFKA_BOOTSTRAP_IP").strip()
+    TG_GATEWAY_URL: str = os.getenv("TG_GATEWAY_URL").strip()

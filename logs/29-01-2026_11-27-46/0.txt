@@ -1,0 +1,2 @@
+_client.py:1740 #INFO     [2026-01-29 11:27:54,415] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"
+_client.py:1740 #INFO     [2026-01-29 11:28:18,367] - httpx - 0| HTTP Request: GET http://127.0.0.1:8001/internal/stream/1003645046857/44?offset=0 "HTTP/1.1 200 OK"

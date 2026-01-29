@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from fastapi import Header, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.api_models import *
 from app.config import Config
@@ -177,4 +177,34 @@ async def media_file_info(chat_id: int, message_id: int, authorization: str = He
                 created_at="datetime"
             )
         ).model_dump()
+    )
+
+
+@Config.REST_APP.get("/api/v1/media/{chat_id}/{msg_id}")
+async def proxy_video_stream(chat_id: int, msg_id: int, range: str = Header(None)):
+    offset = 0
+    if range:
+        try:
+            offset = int(range.replace("bytes=", "").split("-")[0])
+        except (ValueError, IndexError):
+            offset = 0
+
+    async def stream_generator():
+        async with Config.HTTP_CLIENT.stream(
+            "GET",
+            f"{Config.TG_GATEWAY_URL}/internal/stream/{chat_id}/{msg_id}?offset={offset}"
+        ) as response:
+            if response.status_code != 200:
+                return
+
+            async for chunk in response.aiter_bytes(chunk_size=524288):
+                yield chunk
+
+    return StreamingResponse(
+        stream_generator(),
+        media_type="video/mp4",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Type": "video/mp4"
+        }
     )
