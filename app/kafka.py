@@ -4,7 +4,7 @@ import uuid
 from typing import Dict
 from http import HTTPStatus
 
-from aiokafka import AIOKafkaProducer
+from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from aiokafka.errors import KafkaConnectionError
 from fastapi.responses import JSONResponse
 
@@ -16,16 +16,17 @@ from app.utils import Utils as Ut
 class KafkaInterface:
     BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", Config.KAFKA_BOOTSTRAP_IP)
     PRODUCER: Optional[AIOKafkaProducer] = None
+    CONSUMER: Optional[AIOKafkaConsumer] = None
 
     @classmethod
-    async def initialize(cls) -> bool:
+    async def init_producer(cls) -> bool:
         if cls.PRODUCER is None:
             cls.PRODUCER = AIOKafkaProducer(
                 bootstrap_servers=cls.BOOTSTRAP,
                 enable_idempotence=True,
                 acks="all",
                 max_batch_size=16384,
-                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                value_serializer=lambda v: json.loads(v.decode("utf-8")),
                 key_serializer=lambda k: k.encode("utf-8")
             )
 
@@ -38,9 +39,25 @@ class KafkaInterface:
                 return False
 
     @classmethod
+    async def init_consumer(cls) -> bool:
+        if cls.CONSUMER is None:
+            cls.CONSUMER = AIOKafkaConsumer(
+                Config.KAFKA_TOPIC_RESPONSES,
+                bootstrap_servers=Config.KAFKA_BOOTSTRAP_IP,
+                group_id="demo-group",
+                auto_offset_reset="earliest",
+                enable_auto_commit=True,
+                value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+            )
+            await cls.CONSUMER.start()
+
+    @classmethod
     async def stop(cls):
         if cls.PRODUCER:
             await cls.PRODUCER.stop()
+
+        if cls.CONSUMER:
+            await cls.CONSUMER.stop()
 
     @staticmethod
     async def get_request_type(payload) -> str:
@@ -59,7 +76,8 @@ class KafkaInterface:
             SendGIFRequest: "send_gif",
             CreateTopicRequest: "create_topic",
             EditTopicRequest: "edit_topic",
-            DeleteTopicRequest: "delete_topic"
+            DeleteTopicRequest: "delete_topic",
+            MediaFileInfoRequest: "media_file_info"
         }
 
         for model, req_type in mapping.items():
@@ -70,7 +88,7 @@ class KafkaInterface:
         return "None"
 
     @classmethod
-    async def send_message(cls, payload, topic: str = "messages") -> dict:
+    async def send_message(cls, payload, topic: str = "tg_commands") -> dict:
         if cls.PRODUCER is None:
             raise RuntimeError("Kafka Producer is not initialized. Call initialize() first.")
 
@@ -119,3 +137,20 @@ class KafkaInterface:
             status_code = HTTPStatus.OK
 
         return JSONResponse(status_code=status_code, content=res_data.model_dump())
+
+    @classmethod
+    async def kafka_response_listener(cls):
+        Config.LOGGER.info("Kafka response listener has been started!")
+
+        try:
+            async for msg in cls.CONSUMER:
+                data = msg.value
+                corr_id = data.get("request_id")
+
+                if corr_id in Config.PENDING_REQUESTS:
+                    future = Config.PENDING_REQUESTS.pop(corr_id)
+                    future.set_result(data)
+                    print(f"set result; corr_id = {corr_id}; data = {data}")
+
+        finally:
+            await cls.CONSUMER.stop()

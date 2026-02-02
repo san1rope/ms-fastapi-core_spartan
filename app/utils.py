@@ -7,6 +7,7 @@ from typing import Union
 
 from app.config import Config
 from app.api_models import APIError
+from app.kafka import KafkaInterface
 
 
 class Utils:

@@ -1,3 +1,5 @@
+import asyncio
+import uuid
 from http import HTTPStatus
 
 from fastapi import Header, Request
@@ -163,21 +165,39 @@ async def delete_topic(topic_id: int, body: DeleteTopicRequest, authorization: s
 async def media_file_info(chat_id: int, message_id: int, authorization: str = Header(None)):
     await Ut.check_auth(authorization)
 
-    return JSONResponse(
-        status_code=HTTPStatus.OK,
-        content=MediaFileInfoResponse(
-            status=Ut.STATUS_SUCCESS,
-            media_info=MediaInfo(
-                file_type="str",
-                file_name="asd",
-                mime_type="asd",
-                file_size=1000,
-                width=1,
-                height=1,
-                created_at="datetime"
-            )
-        ).model_dump()
-    )
+    result = await KafkaInterface.send_message(payload=MediaFileInfoRequest(
+        chat_id=chat_id,
+        message_id=message_id
+    ))
+
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+    request_id = result["message_id"]
+    Config.PENDING_REQUESTS[request_id] = future
+
+    try:
+        result = await asyncio.wait_for(future, timeout=10)
+        print(f"result media_file_info = {result}")
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=MediaFileInfoResponse(
+                status=Ut.STATUS_SUCCESS,
+                media_info=MediaInfo(
+                    file_type="str",
+                    file_name="asd",
+                    mime_type="asd",
+                    file_size=1000,
+                    width=1,
+                    height=1,
+                    created_at="datetime"
+                )
+            ).model_dump()
+        )
+
+    except TimeoutError:
+        Config.PENDING_REQUESTS.pop(request_id)
+        return {"temperror": "err"}
 
 
 @Config.REST_APP.get("/api/v1/media/{chat_id}/{msg_id}")
@@ -191,8 +211,8 @@ async def proxy_video_stream(chat_id: int, msg_id: int, range: str = Header(None
 
     async def stream_generator():
         async with Config.HTTP_CLIENT.stream(
-            "GET",
-            f"{Config.TG_GATEWAY_URL}/internal/stream/{chat_id}/{msg_id}?offset={offset}"
+                "GET",
+                f"{Config.TG_GATEWAY_URL}/internal/stream/{chat_id}/{msg_id}?offset={offset}"
         ) as response:
             if response.status_code != 200:
                 return

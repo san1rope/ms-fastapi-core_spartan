@@ -14,6 +14,10 @@ class Config:
     UVICORN_HOST: str = os.getenv("UVICORN_HOST").strip()
     UVICORN_PORT: int = int(os.getenv("UVICORN_PORT").strip())
 
+    KAFKA_BOOTSTRAP_IP: str = os.getenv("KAFKA_BOOTSTRAP_IP").strip()
+    KAFKA_TOPIC_COMMANDS: str = os.getenv("KAFKA_TOPIC_COMMANDS").strip()
+    KAFKA_TOPIC_RESPONSES: str = os.getenv("KAFKA_TOPIC_RESPONSES").strip()
+
     DATETIME_FORMAT = os.getenv("DATETIME_FORMAT").strip()
     LOGGING_DIR = Path(os.path.abspath("logs"))
     LOGGER: Optional[Logger] = None
@@ -22,5 +26,6 @@ class Config:
     HTTP_CLIENT = AsyncClient(timeout=None)
 
     REST_API_TOKEN: str = os.getenv("REST_API_TOKEN").strip()
-    KAFKA_BOOTSTRAP_IP: str = os.getenv("KAFKA_BOOTSTRAP_IP").strip()
     TG_GATEWAY_URL: str = os.getenv("TG_GATEWAY_URL").strip()
+
+    PENDING_REQUESTS = {}
