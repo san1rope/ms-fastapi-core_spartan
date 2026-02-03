@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 import uuid
 from typing import Dict
 from http import HTTPStatus
@@ -26,12 +27,13 @@ class KafkaInterface:
                 enable_idempotence=True,
                 acks="all",
                 max_batch_size=16384,
-                value_serializer=lambda v: json.loads(v.decode("utf-8")),
+                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
                 key_serializer=lambda k: k.encode("utf-8")
             )
 
             try:
                 await cls.PRODUCER.start()
+                Config.LOGGER.info("Kafka Producer has been init")
                 return True
 
             except KafkaConnectionError as ex:
@@ -49,7 +51,15 @@ class KafkaInterface:
                 enable_auto_commit=True,
                 value_deserializer=lambda v: json.loads(v.decode("utf-8")),
             )
-            await cls.CONSUMER.start()
+            try:
+                await cls.CONSUMER.start()
+                Config.LOGGER.info("Kafka Consumer has been init")
+                return True
+
+            except KafkaConnectionError as ex:
+                Config.LOGGER.critical(f"Kafka Connection Error! ex: {ex}")
+                return False
+
 
     @classmethod
     async def stop(cls):
@@ -88,9 +98,9 @@ class KafkaInterface:
         return "None"
 
     @classmethod
-    async def send_message(cls, payload, topic: str = "tg_commands") -> dict:
+    async def send_message(cls, payload, topic: str) -> dict:
         if cls.PRODUCER is None:
-            raise RuntimeError("Kafka Producer is not initialized. Call initialize() first.")
+            raise RuntimeError("Kafka Producer is not initialized.")
 
         request_type = await cls.get_request_type(payload)
         msg_id = str(uuid.uuid4())
@@ -100,12 +110,7 @@ class KafkaInterface:
         data["request_type"] = request_type
 
         try:
-            metadata = await cls.PRODUCER.send_and_wait(
-                topic,
-                key=msg_id,
-                value=data
-            )
-
+            metadata = await cls.PRODUCER.send_and_wait(topic, key=msg_id, value=data)
             return {
                 "message_id": msg_id,
                 "topic": metadata.topic,
@@ -113,8 +118,9 @@ class KafkaInterface:
                 "offset": metadata.offset,
             }
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as ex:
+            Config.LOGGER.error(f"Не удалось отправить сообщение! ex:\n{traceback.format_exc()}")
+            return {"error": str(ex)}
 
     @staticmethod
     async def response_from_kafka_result(result: Dict) -> JSONResponse:

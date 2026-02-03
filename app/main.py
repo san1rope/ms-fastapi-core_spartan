@@ -17,11 +17,9 @@ async def lifespan(app: FastAPI):
     Config.LOGGER = logger
 
     if not await KafkaInterface().init_producer():
-        Config.LOGGER.critical("Не удалось инициализировать PRODUCER!")
         return
 
     if not await KafkaInterface().init_consumer():
-        Config.LOGGER.critical("Не удалось инициализировать CONSUMER!")
         return
 
     loop = asyncio.get_event_loop()
