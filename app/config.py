@@ -27,5 +27,6 @@ class Config:
 
     REST_API_TOKEN: str = os.getenv("REST_API_TOKEN").strip()
     TG_GATEWAY_URL: str = os.getenv("TG_GATEWAY_URL").strip()
+    CACHE_LIVE: int = int(os.getenv("CACHE_LIVE").strip())
 
     PENDING_REQUESTS = {}
