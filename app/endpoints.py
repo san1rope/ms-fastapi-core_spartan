@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from http import HTTPStatus
 
 from fastapi import Header, Request
@@ -172,33 +171,19 @@ async def media_file_info(chat_id: int, message_id: int, authorization: str = He
 
     loop = asyncio.get_running_loop()
     future = loop.create_future()
-    print(f"result = {result}")
     request_id = result["message_id"]
     Config.PENDING_REQUESTS[request_id] = future
 
     try:
-        result = await asyncio.wait_for(future, timeout=10)
-        print(f"result media_file_info = {result}")
-
+        result = MediaFileInfoResponse(**(await asyncio.wait_for(future, timeout=30)))
         return JSONResponse(
-            status_code=HTTPStatus.OK,
-            content=MediaFileInfoResponse(
-                status=Ut.STATUS_SUCCESS,
-                media_info=MediaInfo(
-                    file_type="str",
-                    file_name="asd",
-                    mime_type="asd",
-                    file_size=1000,
-                    width=1,
-                    height=1,
-                    created_at="datetime"
-                )
-            ).model_dump()
+            status_code=HTTPStatus.OK if result.status == Ut.STATUS_SUCCESS else HTTPStatus.SERVICE_UNAVAILABLE,
+            content=result.model_dump()
         )
 
-    except TimeoutError:
+    except asyncio.exceptions.TimeoutError:
         Config.PENDING_REQUESTS.pop(request_id)
-        return {"temperror": "err"}
+        return await KafkaInterface.response_from_kafka_result(result={"error": "Request timed out"})
 
 
 @Config.REST_APP.get("/api/v1/media/{chat_id}/{msg_id}")

@@ -2,6 +2,9 @@ import asyncio
 
 from aiohttp import ClientSession
 
+from app.api_models import MediaFileInfoResponse, MediaInfo
+from app.kafka import KafkaInterface
+
 
 async def send_message():
     url = "http://127.0.0.1:8000/api/v1/messages/send"
@@ -198,16 +201,34 @@ async def send_document():
 
 
 async def get_media_file_info():
-    url = "http://127.0.0.1:8000/api/v1/media/-1003645046857/78/info"
+    url = "http://127.0.0.1:8000/api/v1/media/-1003645046857/80/info"
     headers = {
         "Content-Type": "application/json",
         "authorization": "Bearer 1231424nelsa"
     }
 
     async with ClientSession() as session:
-        async with session.get(url=url, headers=headers, timeout=10) as response:
+        async with session.get(url=url, headers=headers, timeout=30) as response:
             answer = await response.text()
             print(answer)
+
+
+async def test():
+    payload = MediaFileInfoResponse(
+        status="success",
+        media_info=MediaInfo(
+            file_type="asd",
+            file_name='asd',
+            mime_type="asd",
+            file_size=1,
+            width=1,
+            height=1,
+            created_at="asd"
+        )
+    )
+    result = await KafkaInterface().send_message(topic="tg-responses", payload=payload)
+    print(result)
+    await KafkaInterface().stop()
 
 
 if __name__ == '__main__':

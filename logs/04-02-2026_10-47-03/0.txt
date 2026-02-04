@@ -1,0 +1,12 @@
+kafka.py:36 #INFO     [2026-02-04 10:47:03,905] - root - 0| Kafka Producer has been init
+subscription_state.py:109 #INFO     [2026-02-04 10:47:03,905] - aiokafka.consumer.subscription_state - 0| Updating subscribed topics to: frozenset({'tg-responses'})
+group_coordinator.py:585 #INFO     [2026-02-04 10:47:03,936] - aiokafka.consumer.group_coordinator - 0| Discovered coordinator 1 for group demo-group
+group_coordinator.py:411 #INFO     [2026-02-04 10:47:03,936] - aiokafka.consumer.group_coordinator - 0| Revoking previously assigned partitions set() for group demo-group
+group_coordinator.py:1265 #INFO     [2026-02-04 10:47:03,936] - aiokafka.consumer.group_coordinator - 0| (Re-)joining group demo-group
+group_coordinator.py:1317 #INFO     [2026-02-04 10:47:06,851] - aiokafka.consumer.group_coordinator - 0| Joined group 'demo-group' (generation 111) with member_id aiokafka-0.13.0-515c4093-e419-40dd-ab8e-bf5beda71ae4
+group_coordinator.py:1325 #INFO     [2026-02-04 10:47:06,858] - aiokafka.consumer.group_coordinator - 0| Elected group leader -- performing partition assignments using roundrobin
+group_coordinator.py:1457 #INFO     [2026-02-04 10:47:06,870] - aiokafka.consumer.group_coordinator - 0| Successfully synced group demo-group with generation 111
+group_coordinator.py:497 #INFO     [2026-02-04 10:47:06,870] - aiokafka.consumer.group_coordinator - 0| Setting newly assigned partitions {TopicPartition(topic='tg-responses', partition=0)} for group demo-group
+kafka.py:56 #INFO     [2026-02-04 10:47:06,870] - root - 0| Kafka Consumer has been init
+kafka.py:149 #INFO     [2026-02-04 10:47:06,872] - root - 0| Kafka response listener has been started!
+group_coordinator.py:386 #INFO     [2026-02-04 10:49:48,544] - aiokafka.consumer.group_coordinator - 0| LeaveGroup request succeeded

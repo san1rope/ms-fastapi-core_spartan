@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -16,18 +17,15 @@ async def lifespan(app: FastAPI):
     logger = await Ut.add_logging(datetime_of_start=datetime_of_start, process_id=0)
     Config.LOGGER = logger
 
-    if not await KafkaInterface().init_producer():
-        return
-
-    if not await KafkaInterface().init_consumer():
-        return
+    if (not await KafkaInterface().init_producer()) or (not await KafkaInterface().init_consumer()):
+        sys.exit(1)
 
     loop = asyncio.get_event_loop()
-    loop.create_task(KafkaInterface().kafka_response_listener())
+    loop.create_task(KafkaInterface().response_listener())
 
     yield
 
-    await KafkaInterface.stop()
+    await KafkaInterface().stop()
 
 
 if __name__ == "__main__":

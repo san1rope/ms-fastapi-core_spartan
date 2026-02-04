@@ -1,0 +1,4 @@
+client.py:206 #ERROR    [2026-02-04 13:14:43,386] - aiokafka - 0| Unable connect to "172.19.111.40:9092": [WinError 1225] The remote computer refused the network connection
+kafka.py:40 #CRITICAL [2026-02-04 13:14:43,386] - root - 0| Kafka Connection Error! ex: KafkaConnectionError: Unable to bootstrap from [('172.19.111.40', 9092, <AddressFamily.AF_INET: 2>)]
+base_events.py:1758 #ERROR    [2026-02-04 13:14:43,428] - asyncio - 0| Unclosed AIOKafkaProducer
+producer: <aiokafka.producer.producer.AIOKafkaProducer object at 0x00000125393657B0>

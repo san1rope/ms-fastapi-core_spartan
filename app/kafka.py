@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import traceback
@@ -34,18 +35,19 @@ class KafkaInterface:
             try:
                 await cls.PRODUCER.start()
                 Config.LOGGER.info("Kafka Producer has been init")
-                return True
 
             except KafkaConnectionError as ex:
-                Config.LOGGER.critical(f"Kafka Connection Error! ex: {ex}")
+                Config.LOGGER.critical(f"KafkaInterface.init_producer | Kafka Connection Error! ex: {ex}")
                 return False
+
+        return True
 
     @classmethod
     async def init_consumer(cls) -> bool:
         if cls.CONSUMER is None:
             cls.CONSUMER = AIOKafkaConsumer(
-                Config.KAFKA_TOPIC_RESPONSES,
-                bootstrap_servers=Config.KAFKA_BOOTSTRAP_IP,
+                "tg-responses",
+                bootstrap_servers=f"{Config.KAFKA_BOOTSTRAP_IP}:9092",
                 group_id="demo-group",
                 auto_offset_reset="earliest",
                 enable_auto_commit=True,
@@ -54,23 +56,25 @@ class KafkaInterface:
             try:
                 await cls.CONSUMER.start()
                 Config.LOGGER.info("Kafka Consumer has been init")
-                return True
 
             except KafkaConnectionError as ex:
-                Config.LOGGER.critical(f"Kafka Connection Error! ex: {ex}")
+                Config.LOGGER.critical(f"KafkaInterface.init_consumer | Kafka Connection Error! ex: {ex}")
                 return False
 
+        return True
 
     @classmethod
     async def stop(cls):
         if cls.PRODUCER:
             await cls.PRODUCER.stop()
+            Config.LOGGER.info("Kafka Producer has been stop")
 
         if cls.CONSUMER:
             await cls.CONSUMER.stop()
+            Config.LOGGER.info("Kafka Consumer has been stop")
 
     @staticmethod
-    async def get_request_type(payload) -> str:
+    async def get_request_type(payload) -> Optional[str]:
         mapping = {
             SendMessageRequest: "send_message",
             EditMessageRequest: "edit_message",
@@ -92,31 +96,38 @@ class KafkaInterface:
 
         for model, req_type in mapping.items():
             if isinstance(payload, model):
-                print(f"req_type = {req_type}; payload = {payload}")
                 return req_type
 
-        return "None"
+        return None
 
     @classmethod
     async def send_message(cls, payload, topic: str) -> dict:
         if cls.PRODUCER is None:
-            raise RuntimeError("Kafka Producer is not initialized.")
+            await cls.init_producer()
 
         request_type = await cls.get_request_type(payload)
-        msg_id = str(uuid.uuid4())
+        if request_type is None:
+            Config.LOGGER.error("Could not send message, request_type is None!")
+            raise Exception("KafkaInterface.send_message, request_type is None!")
 
         data = payload.model_dump()
-        data["request_id"] = msg_id
+        data["request_id"] = str(uuid.uuid4())
         data["request_type"] = request_type
 
         try:
-            metadata = await cls.PRODUCER.send_and_wait(topic, key=msg_id, value=data)
+            metadata = await cls.PRODUCER.send_and_wait(topic, key=data["request_id"], value=data)
             return {
-                "message_id": msg_id,
+                "message_id": data["request_id"],
                 "topic": metadata.topic,
                 "partition": metadata.partition,
                 "offset": metadata.offset,
             }
+
+        except KafkaConnectionError as ex:
+            Config.LOGGER.critical(f"KafkaInterface.send_message | Kafka Connection Error! ex: {ex}")
+
+        except asyncio.TimeoutError as ex:
+            pass
 
         except Exception as ex:
             Config.LOGGER.error(f"Не удалось отправить сообщение! ex:\n{traceback.format_exc()}")
@@ -145,18 +156,35 @@ class KafkaInterface:
         return JSONResponse(status_code=status_code, content=res_data.model_dump())
 
     @classmethod
-    async def kafka_response_listener(cls):
+    async def response_listener(cls):
+        if not cls.CONSUMER:
+            await cls.init_consumer()
+
         Config.LOGGER.info("Kafka response listener has been started!")
 
         try:
             async for msg in cls.CONSUMER:
+                Config.LOGGER.info(
+                    f"New topic message | {msg.topic}:{msg.partition}@{msg.offset} key={msg.key} value = {msg.value}")
+
                 data = msg.value
                 corr_id = data.get("request_id")
 
                 if corr_id in Config.PENDING_REQUESTS:
                     future = Config.PENDING_REQUESTS.pop(corr_id)
-                    future.set_result(data)
-                    print(f"set result; corr_id = {corr_id}; data = {data}")
+                    if not future.done():
+                        future.set_result(data)
 
-        finally:
-            await cls.CONSUMER.stop()
+                    data.pop("request_id")
+
+        except KafkaConnectionError as ex:
+            Config.LOGGER.critical(f"KafkaInterface().response_listener |  Kafka Connection Error! ex: {ex}")
+
+        except asyncio.TimeoutError as ex:
+            pass
+
+        except Exception:
+            print(traceback.format_exc())
+
+            Config.LOGGER.warning("Trying to re-init Kafka Consumer...")
+            await KafkaInterface().init_consumer()
